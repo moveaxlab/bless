@@ -163,8 +163,11 @@ def lambda_handler_user(
     ca = get_ssh_certificate_authority(ca_private_key, ca_private_key_password)
     cert_builder = get_ssh_certificate_builder(ca, SSHCertificateType.USER,
                                                request.public_key_to_sign)
-    for username in request.remote_usernames.split(','):
-        cert_builder.add_valid_principal(username)
+    # for username in request.remote_usernames.split(','):
+        # cert_builder.add_valid_principal(username)
+        
+    # Add as the principal the bastion user
+    cert_builder.add_valid_principal(request.bastion_user)
 
     cert_builder.set_valid_before(valid_before)
     cert_builder.set_valid_after(valid_after)
