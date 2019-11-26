@@ -63,6 +63,12 @@ KMSAUTH_REMOTE_USERNAMES_ALLOWED_OPTION_DEFAULT = None
 KMSAUTH_SERVICE_ID_OPTION = 'kmsauth_serviceid'
 KMSAUTH_SERVICE_ID_DEFAULT = None
 
+ACL_SECTION = 'BLESS ACL'
+ACL_PRINCIPALS_OPTION = "use_acl_principals"
+ACL_PRINCIPALS_OPTION_DEFAULT = "False"
+ACL_DYNAMODB_TABLE_OPTION = 'dynamodb_acl_table_arn'
+ACL_DYNAMODB_TABLE_DEFAULT = None
+
 USERNAME_VALIDATION_OPTION = 'username_validation'
 USERNAME_VALIDATION_DEFAULT = 'useradd'
 
@@ -111,7 +117,9 @@ class BlessConfig(configparser.RawConfigParser, object):
                     CA_PRIVATE_KEY_COMPRESSION_OPTION: CA_PRIVATE_KEY_COMPRESSION_OPTION_DEFAULT,
                     SERVER_CERTIFICATE_VALIDITY_BEFORE_SEC_OPTION: SERVER_CERTIFICATE_VALIDITY_BEFORE_SEC_DEFAULT,
                     SERVER_CERTIFICATE_VALIDITY_AFTER_SEC_OPTION: SERVER_CERTIFICATE_VALIDITY_AFTER_SEC_DEFAULT,
-                    HOSTNAME_VALIDATION_OPTION: HOSTNAME_VALIDATION_DEFAULT
+                    HOSTNAME_VALIDATION_OPTION: HOSTNAME_VALIDATION_DEFAULT,
+                    ACL_PRINCIPALS_OPTION: ACL_PRINCIPALS_OPTION_DEFAULT,
+                    ACL_DYNAMODB_TABLE_OPTION: ACL_DYNAMODB_TABLE_DEFAULT
                     }
         configparser.RawConfigParser.__init__(self, defaults=defaults)
         self.read(config_file)
@@ -124,6 +132,8 @@ class BlessConfig(configparser.RawConfigParser, object):
 
         if not self.has_section(KMSAUTH_SECTION):
             self.add_section(KMSAUTH_SECTION)
+        if not self.has_section(ACL_SECTION):
+            self.add_section(ACL_SECTION)
 
         if not self.has_option(BLESS_CA_SECTION, self.aws_region + REGION_PASSWORD_OPTION_SUFFIX):
             if not self.has_option(BLESS_CA_SECTION, 'default' + REGION_PASSWORD_OPTION_SUFFIX):

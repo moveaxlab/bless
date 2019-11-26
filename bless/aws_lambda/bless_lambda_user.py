@@ -4,6 +4,7 @@
     :license: Apache, see LICENSE for more details.
 """
 import time
+import sys
 
 import boto3
 from bless.aws_lambda.bless_lambda_common import success_response, error_response, set_logger, check_entropy, \
@@ -17,6 +18,9 @@ from bless.config.bless_config import BLESS_OPTIONS_SECTION, \
     KMSAUTH_REMOTE_USERNAMES_ALLOWED_OPTION, \
     VALIDATE_REMOTE_USERNAMES_AGAINST_IAM_GROUPS_OPTION, \
     KMSAUTH_SERVICE_ID_OPTION, \
+    ACL_SECTION, \
+    ACL_DYNAMODB_TABLE_OPTION, \
+    ACL_PRINCIPALS_OPTION, \
     TEST_USER_OPTION, \
     CERTIFICATE_EXTENSIONS_OPTION, \
     REMOTE_USERNAMES_VALIDATION_OPTION, \
@@ -25,6 +29,7 @@ from bless.config.bless_config import BLESS_OPTIONS_SECTION, \
 from bless.request.bless_request_user import BlessUserSchema
 from bless.ssh.certificate_authorities.ssh_certificate_authority_factory import \
     get_ssh_certificate_authority
+from bless.acl.acl_database import get_valid_iam_principals
 from bless.ssh.certificates.ssh_certificate_builder import SSHCertificateType
 from bless.ssh.certificates.ssh_certificate_builder_factory import get_ssh_certificate_builder
 from kmsauth import KMSTokenValidator, TokenValidationError
@@ -164,10 +169,15 @@ def lambda_handler_user(
     cert_builder = get_ssh_certificate_builder(ca, SSHCertificateType.USER,
                                                request.public_key_to_sign)
     # for username in request.remote_usernames.split(','):
-        # cert_builder.add_valid_principal(username)
-        
-    # Add as the principal the bastion user
-    cert_builder.add_valid_principal(request.bastion_user)
+    #    cert_builder.add_valid_principal(username)
+
+    # If there's the option to use the ACL, add the principals from the table instead of the user IAM identity.
+    if config.getboolean(ACL_SECTION, ACL_PRINCIPALS_OPTION):
+        for principal in get_valid_iam_principals(request.bastion_user, ACL_DYNAMODB_TABLE_OPTION):
+            cert_builder.add_valid_principal(principal)
+    else:
+        # Add as the principal the bastion user
+        cert_builder.add_valid_principal(request.bastion_user)
 
     cert_builder.set_valid_before(valid_before)
     cert_builder.set_valid_after(valid_after)

@@ -1,17 +1,23 @@
-"""
-.. module: bless.ssh.acl_database
-    :copyright: (c) 2019 by Moveax Ltd., see AUTHORS for more
-    :license: Apache, see LICENSE for more details.
-"""
-
 import boto3
+
+
+def bless_prefix(args):
+    if "bless-" in args:  # TODO do we have to set this as a configurable prefix?
+        return True
+    else:
+        return False
+
 
 def get_valid_iam_principals(iam_user, acl_arn):
     dynamodb = boto3.client("dynamodb")
     iam = boto3.client("iam")
-    group_id = iam.list_groups_for_user(UserName=iam_user)
+    groups = iam.list_groups_for_user(UserName=iam_user) or []
+    userGroups = {group['GroupName'] for group in userGroups['Groups']}
+    bless_groups = filter(bless_prefix, userGroups)
+    group_roles = []
     try:
-        group_roles = dynamodb.Table(acl_arn).get_item(Key={"GroupId": group_id})['Item']['Instances']
+        for group in bless_groups:
+            group_roles.extend(dynamodb.Table(acl_arn).get_item(Key={"GroupId": group})['Item']['Instances'])
     except Exception:
-        return ""
-    return ",".join(group_roles) if not [] else "" # Returns a comma separated string of valid principals
+        return []
+    return group_roles  # Returns an array of valid principals
