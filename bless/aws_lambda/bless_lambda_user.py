@@ -4,7 +4,6 @@
     :license: Apache, see LICENSE for more details.
 """
 import time
-import sys
 
 import boto3
 from bless.aws_lambda.bless_lambda_common import success_response, error_response, set_logger, check_entropy, \

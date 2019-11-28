@@ -1,6 +1,6 @@
 import boto3
 
-dynamodb_resource = boto3.resource("dynamodb")
+dynamodb_resource = boto3.resource("dynamodb", endpoint_url='http://localhost:8000')
 iam_client = boto3.client("iam")
 
 
@@ -14,13 +14,14 @@ def bless_prefix(args):
 def get_valid_iam_principals(iam_user, acl_arn):
     dynamodb = dynamodb_resource
     iam = iam_client
-    groups = iam.list_groups_for_user(UserName=iam_user) or []
+    userGroups = iam.list_groups_for_user(UserName=iam_user) or []
     userGroups = {group['GroupName'] for group in userGroups['Groups']}
-    bless_groups = filter(bless_prefix, userGroups)
+    bless_groups = list(filter(bless_prefix, userGroups))
     group_roles = []
-    try:
-        for group in bless_groups:
-            group_roles.extend(dynamodb.Table(acl_arn).get_item(Key={"GroupId": group})['Item']['Instances'])
-    except Exception:
-        return []
+    tags = dynamodb.Table(acl_arn).scan()['Items']
+    for tag in tags:
+        for k in tag['Instances']:
+            group_roles.append(k)
+
+    group_roles = list(dict.fromkeys(group_roles))  # Make sure that there are no duplicates coming from multiple groups
     return group_roles  # Returns an array of valid principals
