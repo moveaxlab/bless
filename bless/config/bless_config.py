@@ -33,8 +33,7 @@ TEST_USER_DEFAULT = None
 
 CERTIFICATE_EXTENSIONS_OPTION = 'certificate_extensions'
 # These are the the ssh-keygen default extensions:
-CERTIFICATE_EXTENSIONS_DEFAULT = 'permit-X11-forwarding,' \
-                                 'permit-agent-forwarding,' \
+CERTIFICATE_EXTENSIONS_DEFAULT = 'permit-agent-forwarding,' \
                                  'permit-port-forwarding,' \
                                  'permit-pty,' \
                                  'permit-user-rc'
