@@ -172,7 +172,7 @@ def lambda_handler_user(
 
     # If there's the option to use the ACL, add the principals from the table instead of the user IAM identity.
     if config.getboolean(ACL_SECTION, ACL_PRINCIPALS_OPTION):
-        for principal in get_valid_iam_principals(request.bastion_user, ACL_DYNAMODB_TABLE_OPTION):
+        for principal in get_valid_iam_principals(request.bastion_user, config.get(ACL_SECTION,ACL_DYNAMODB_TABLE_OPTION)):
             cert_builder.add_valid_principal(principal)
     else:
         # Add as the principal the bastion user
