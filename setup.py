@@ -22,7 +22,8 @@ setup(
         'cryptography==2.6.1',
         'ipaddress==1.0.22',
         'marshmallow==2.19.2',
-        'kmsauth==0.3.0'
+        'kmsauth==0.3.0',
+        'aws_xray_sdk'
     ],
     extras_require={
         'tests': [
