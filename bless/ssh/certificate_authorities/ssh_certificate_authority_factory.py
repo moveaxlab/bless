@@ -8,6 +8,8 @@ from bless.ssh.certificate_authorities.rsa_certificate_authority import \
 from bless.ssh.certificate_authorities.ssh_certificate_authority import \
     SSHCertificateAuthorityPrivateKeyType
 
+from aws_xray_sdk.core import xray_recorder
+
 
 def get_ssh_certificate_authority(private_key, password=None):
     """
@@ -17,7 +19,9 @@ def get_ssh_certificate_authority(private_key, password=None):
     :param password: ASCII bytes of the Password to decrypt the Private Key, if it is encrypted.  Which it should be.
     :return: An SSHCertificateAuthority instance.
     """
+    xray_recorder.begin_subsegment('ssh_decrypt')
     if private_key.decode('ascii').startswith(SSHCertificateAuthorityPrivateKeyType.RSA):
         return RSACertificateAuthority(private_key, password)
     else:
         raise TypeError("Unsupported CA Private Key Type")
+    xray_recorder.end_subsegment()

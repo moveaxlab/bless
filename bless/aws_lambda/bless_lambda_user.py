@@ -33,8 +33,8 @@ from bless.ssh.certificates.ssh_certificate_builder import SSHCertificateType
 from bless.ssh.certificates.ssh_certificate_builder_factory import get_ssh_certificate_builder
 from kmsauth import KMSTokenValidator, TokenValidationError
 from marshmallow.exceptions import ValidationError
-
-
+from aws_xray_sdk.core import xray_recorder
+xray_recorder.begin_subsegment('lambda_handler_begin')
 def lambda_handler_user(
         event, context=None, ca_private_key_password=None,
         entropy_check=True,
@@ -146,6 +146,7 @@ def lambda_handler_user(
             elif request.remote_usernames != request.bastion_user:
                 return error_response('KMSAuthValidationError',
                                       'remote_usernames must be the same as bastion_user')
+            xray_recorder.begin_subsegment('kms_begin')
             try:
                 validator = KMSTokenValidator(
                     None,
@@ -162,8 +163,9 @@ def lambda_handler_user(
                 return error_response('KMSAuthValidationError', str(e))
         else:
             return error_response('InputValidationError', 'Invalid request, missing kmsauth token')
-
+        xray_recorder.end_subsegment()
     # Build the cert
+    xray_recorder.begin_subsegment('cert_build')
     ca = get_ssh_certificate_authority(ca_private_key, ca_private_key_password)
     cert_builder = get_ssh_certificate_builder(ca, SSHCertificateType.USER,
                                                request.public_key_to_sign)
@@ -195,11 +197,14 @@ def lambda_handler_user(
         time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(valid_before)))
     cert_builder.set_critical_option_source_addresses(request.bastion_ips)
     cert_builder.set_key_id(key_id)
+    xray_recorder.begin_subsegment("create_cert_file")
     cert = cert_builder.get_cert_file(bypass_time_validity_check)
-
+    xray_recorder.end_subsegment()
+    xray_recorder.end_subsegment()
     logger.info(
         'Issued a cert to bastion_ips[{}] for remote_usernames[{}] with key_id[{}] and '
         'valid_from[{}])'.format(
             request.bastion_ips, request.remote_usernames, key_id,
             time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(valid_after))))
+    xray_recorder.end_subsegment()
     return success_response(cert)

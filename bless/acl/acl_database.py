@@ -1,4 +1,5 @@
 import boto3
+from aws_xray_sdk.core import xray_recorder
 
 dynamodb_resource = boto3.resource("dynamodb")
 iam_client = boto3.client("iam")
@@ -10,8 +11,8 @@ def bless_prefix(args):
     else:
         return False
 
-
 def get_valid_iam_principals(iam_user, acl_arn):
+    xray_recorder.begin_subsegment('dynamodb_call')
     dynamodb = dynamodb_resource
     iam = iam_client
     table_name = acl_arn.split('/')[1]
@@ -25,4 +26,5 @@ def get_valid_iam_principals(iam_user, acl_arn):
             group_roles.append(k)
 
     group_roles = list(dict.fromkeys(group_roles))  # Make sure that there are no duplicates coming from multiple groups
+    xray_recorder.end_subsegment()
     return group_roles  # Returns an array of valid principals
